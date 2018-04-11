@@ -15,7 +15,6 @@ void processCommandLineArgs(int argc 	 			/* in */,
 							char* argv[] 			/* in */,
 							long* num_threads 		/* out */,
 							long* maze_size   		/* out */,
-							long* algorithm_choice 	/* out */
 							);
 
 /* main takes the command line arguments and calls upon the functions in maze.c */
@@ -26,7 +25,6 @@ int main(int argc, char* argv[])
 							argv,
 							&num_threads,
 							&maze_size,
-							&algorithm_choice
 						  );
 
 	/* TODO:  call the appropriate function to generate and return a maze (using pointer reference in argument)
@@ -39,10 +37,10 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-void processCommandLineArgs(int argc, char* argv[], long* num_threads, long* maze_size, long* algorithm_choice)
+void processCommandLineArgs(int argc, char* argv[], long* num_threads, long* maze_size)
 {
 	/* parse out parameters for maze generation and solving */
-	if (argc != 4)
+	if (argc != 3)
 		fprintf(stderr, "Incorrect usage of program.  Proper usage is:\n    ./maze <num_threads> <maze_size> <algorithm_choice>\nexiting...\n");
 
 	*num_threads      = strtol(argv[1], 10);
@@ -53,6 +51,4 @@ void processCommandLineArgs(int argc, char* argv[], long* num_threads, long* maz
 		fprint(stderr, "Invalid input for number of threads. Number must be between 1 and %d", MAX_THREADS);
 	if (maze_size < 2 || maze_size > MAX_SIZE)
 		fprintf(stderr, "Invalid input for size of maze. Number must be between 2 and %d", MAX_SIZE);
-	if (algorithm_choice < 0 || algorithm_choice > 3)
-		fprintf(stderr, "Invalid input for algorithm choice. Algorithm choices are as follows:\n    0: Random Mouse Algorithm\n    1: DFS\n    2: BFS\n    3: Randomized Kruskal's Algorithm\nexiting...\n");
 }
