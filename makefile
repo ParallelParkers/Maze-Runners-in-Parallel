@@ -17,7 +17,7 @@ HEADERS= timer.h maze.h
 OBJECTS=main.c maze.c
 
 # The final program to build
-EXECUTABLE=barber
+EXECUTABLE=maze
 
 # --------------------------------------------
 
