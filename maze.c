@@ -43,13 +43,13 @@ void rand_edge(int size, int* p1, int* p2)
 		{
 			*p2 = (row-1)*size + col;
 			break;
-		} else if (num == 1 && *p1.y < size-1 && !(*gen_maze.vertices[row*size + (col+1)])) {
+		} else if (num == 1 && col < size-1 && !(*gen_maze.vertices[row*size + (col+1)])) {
 			*p2 = row*size + (col+1);
 			break;
-		} else if (num == 2 && *p1.x < size-1 && !(*gen_maze.vertices[(row+1)*size + col])) {
+		} else if (num == 2 && row < size-1 && !(*gen_maze.vertices[(row+1)*size + col])) {
 			*p2 = (row+1)*size + col;
 			break;
-		} else if (num == 3 && *p1.y > 0 && !(*gen_maze.vertices[row*size + (col-1)])) {
+		} else if (num == 3 && col > 0 && !(*gen_maze.vertices[row*size + (col-1)])) {
 			*p2 = row*size + (col-1);
 			break;
 		} else {
@@ -72,7 +72,12 @@ void *threadGenerate(void *my_rank)
 	/* add code to generate portion of maze */
 	while (i < my_n -1)
 	{
+		/* find that random edge */
 
+		/* add edge to the array of edges */
+		pthread_mutex_lock(&mutex);
+		pu
+		pthread_mutex_unlock(&mutex);
 	}
 
     /* using tree-structured reduction */
