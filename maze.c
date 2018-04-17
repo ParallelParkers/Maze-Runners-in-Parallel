@@ -60,23 +60,53 @@ void rand_edge(int size, int* p1, int* p2)
 	return;
 }
 
+int visited(int x, int size, int* maze)
+{
+	for (int i=0; i<size; i++)
+		if (x == maze[i])
+			return 1;
+	return 0;
+}
+
 void *threadGenerate(void *my_rank)
 {
 	long rank, n, my_n;
-	rank = (long) my_rank;
-	int i, row_comp, col_comp, *my_maze;
+	int i, a, b, row_comp, col_comp, cursor, *my_maze;
+	PAIR pair;
 	i = 0;
-	n = (long) pow(*gen_maze.side_length,2);
+	cursor = 1;
+	rank = (long) my_rank;
+	n = (long) *gen_maze.side_length;
 	my_n = n/thread_count;
+	row_comp = (int) (n/(thread_count/2))*floor(rank/2);
+	col_comp = (int) (n/2)*(rank % 2);
+	my_maze = &(*gen_maze.vertices[(int) n/thread_count]);
+	my_maze[0] = rand() % my_n; /* start off Prim's with a random starting vertex */
 
-	/* add code to generate portion of maze */
+	/* generate my portion of maze */
 	while (i < my_n -1)
 	{
-		/* find that random edge */
+		/* find that random edge from visited vertices */
+		/* store visited vertices in my_maze and keep track of a cursor */
+		a = rand() % cursor;
+		rand_edge(my_n, &a, &b);
 
-		/* add edge to the array of edges */
+		/* check if we have an already-visited edge */
+		if (visited(b, cursor, my_maze))
+			continue;
+
+		/* generate pair with appropriate x and y values for push_back() */
+		pair.x = a + row_comp;
+		pair.y = b + col_comp;
+
+		/* add edge to the array of edges and increment if successful */
 		pthread_mutex_lock(&mutex);
-		pu
+		if (!push_back(pair)) {
+			i++;
+		} else {
+			fprintf(stderr, "error adding edge where there should be no error.\nexiting...\n");
+			exit(1);
+		}
 		pthread_mutex_unlock(&mutex);
 	}
 
@@ -89,11 +119,11 @@ void *threadGenerate(void *my_rank)
                 /* maze is fully generated, exit process */
                 pthread_exit(0);
             }
+
             /* wait for thread to complete its maze generation */
             pthread_join(thread_handles[(int) rank+pow(2,iter)], NULL);
 
             /* resolve appropriate connection between 2 parts of maze */
-        	
         } else {
             pthread_exit(0);
         }
