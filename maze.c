@@ -6,63 +6,94 @@
 #include "maze.h"
 
 /* global variables */
+pthread_t* thread_handles;
+pthread_mutex_t mutex;
 long thread_count, cursor;
 MAZE* gen_maze, sol_maze; /* one global variable for initializing the maze, another for solving */
 
-/* adds the given edge to the next slot in the edges*/
+/* adds the given edge to the next slot in the edges
+	NOTE: needs a mutex surrounding it like fish need water -- NOT THREAD SAFE */
 int push_back(PAIR new_edge)
 {
-	size = pow(*gen_maze.side_length, 2); /* size is number of vertices */
-	if (cursor == size-2)
+	int verts = (int) pow(*gen_maze.side_length, 2); /* size is number of vertices */
+	if (cursor < verts-1)
 	{
 		(*gen_maze.edges)[cursor] = new_edge;
 		cursor++;
 		return 0;
-	} else
+	} else {
 		return 1;
+	}
 }
 
-/* generates a random pair returned through the given pointer */
-void rand_edge(int size, PAIR* p1, PAIR* p2) 
+/* generates a random pair returned through the given pointer, or null if no valid vertex can be found */
+void rand_edge(int size, int* p1, int* p2) 
 {
 	if (size <= 1)
 		return NULL;
-	int num;
-	*p1.x = rand() % size;
-	*p1.y = rand() % size;
+	int num, counter, row, col;
+	row = (int) floor(*p1/size);
+	col = *p1 % size;
 	num = rand() % 4;
-	while (1)
+	counter = 0;
+	while (counter < 4)
 	{
-		if (num == 0 && *p1.x > 0)
+		/* checks if p2 is a valid point and has not been visited*/
+		if (num == 0 && row > 0 && !(*gen_maze.vertices[(row-1)*size + col]))
 		{
-			*p2.x = *p1.x-1;
-			*p2.y = *p1.y;
+			*p2 = (row-1)*size + col;
 			break;
-		} else if (num == 1 && *p1.y < size-1) {
-			*p2.x = *p1.x;
-			*p2.y = *p1.y+1;
+		} else if (num == 1 && *p1.y < size-1 && !(*gen_maze.vertices[row*size + (col+1)])) {
+			*p2 = row*size + (col+1);
 			break;
-		} else if (num == 2 && *p1.x < size-1) {
-			*p2.x = *p1.x+1;
-			*p2.y = *p1.y;
+		} else if (num == 2 && *p1.x < size-1 && !(*gen_maze.vertices[(row+1)*size + col])) {
+			*p2 = (row+1)*size + col;
 			break;
-		} else if (num == 3 && *p1.y > 0) {
-			*p2.x = *p1.x;
-			*p2.y = *p1.y-1;
+		} else if (num == 3 && *p1.y > 0 && !(*gen_maze.vertices[row*size + (col-1)])) {
+			*p2 = row*size + (col-1);
 			break;
 		} else {
 			num = (num+1) % 4;
+			counter++;
 		}
 	}
+	return;
 }
 
 void *threadGenerate(void *my_rank)
 {
-	long rank = (long) my_rank;
+	long rank, n, my_n;
+	rank = (long) my_rank;
+	int i, row_comp, col_comp, *my_maze;
+	i = 0;
+	n = (long) pow(*gen_maze.side_length,2);
+	my_n = n/thread_count;
 
 	/* add code to generate portion of maze */
+	while (i < my_n -1)
+	{
 
-	/* add code to send, receive, and join portion of maze */
+	}
+
+    /* using tree-structured reduction */
+    int iter = 0;
+    while (1)
+    {
+        if ((rank % (int) pow(2,iter+1)) == 0) {
+            if (rank == 0 && (int) pow(2,iter) == comm_size) {
+                /* maze is fully generated, exit process */
+                pthread_exit(0);
+            }
+            /* wait for thread to complete its maze generation */
+            pthread_join(thread_handles[(int) rank+pow(2,iter)], NULL);
+
+            /* resolve appropriate connection between 2 parts of maze */
+        	
+        } else {
+            pthread_exit(0);
+        }
+        iter++;
+    }
 }
 
 void *threadSolve(void *my_rank)
@@ -104,19 +135,18 @@ void generateMaze(MAZE* m, long size, long num_threads)
 {
 	/* add code to create pthreads */
     long       thread;
-    pthread_t* thread_handles;
     long i;
     double start_time, end_time;
+    thread_count = num_threads;
     cursor = 0;
     thread_handles = malloc(num_threads*sizeof(pthread_t));
+    pthread_mutex_init(&mutex);
 
     /* make maze m global variable and initialize the size, vertices, and edge variables */
     gen_maze = m;
     *maze.side_length = size;
     *maze.edges = malloc((pow(size,2)-1)*sizeof(PAIR));
-    *maze.vertices = malloc(size*sizeof(int*));
-    for (int i=0; i<size; i++)
-    	*(*maze.vertices) = malloc(size*sizeof(int));
+    *maze.vertices = malloc(pow(size,2)*sizeof(int));
 
     start_time = getProcessTime();
     /* Start the threads. */
@@ -124,9 +154,9 @@ void generateMaze(MAZE* m, long size, long num_threads)
         pthread_create(&thread_handles[thread], NULL,
                        threadGenerate, (void*) thread);
 
-    /* Wait for threads to finish. */
-    for (thread = 0; thread < threads; thread++)
-        pthread_join(thread_handles[thread], NULL);
+    /* Wait for thread 0 to finish, since thread 0 ends
+    *  after all the other threads have completed */
+    pthread_join(thread_handles[0], NULL);
 
     end_time = getProcessTime();
 
