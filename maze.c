@@ -15,7 +15,7 @@ MAZE* gen_maze, sol_maze; /* one global variable for initializing the maze, anot
 	NOTE: needs a mutex surrounding it like fish need water -- NOT THREAD SAFE */
 int push_back(PAIR new_edge)
 {
-	int verts = (int) pow(*gen_maze.side_length, 2); /* size is number of vertices */
+	int verts = (int) pow((*gen_maze)->side_length, 2); /* size is number of vertices */
 	if (cursor < verts-1)
 	{
 		(*gen_maze.edges)[cursor] = new_edge;

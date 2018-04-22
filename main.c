@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 	processCommandLineArgs( argc,
 							argv,
 							&num_threads,
-							&maze_size,
+							&maze_size
 						  );
 
 	/* TODO:  call the appropriate function to generate and return a maze (using pointer reference in argument)
@@ -43,11 +43,11 @@ void processCommandLineArgs(int argc, char* argv[], long* num_threads, long* maz
 	if (argc != 3)
 		fprintf(stderr, "Incorrect usage of program.  Proper usage is:\n    ./maze <num_threads> <maze_size>\nexiting...\n");
 
-	*num_threads = strtol(argv[1], 10);
-	*maze_size   = strtol(argv[2], 10);
+	*num_threads = (long) atoi(argv[1]);
+	*maze_size   = (long) atoi(argv[2]);
 
-	if (num_threads < 1 || num_threads > MAX_THREADS)
-		fprint(stderr, "Invalid input for number of threads. Number must be between 1 and %d", MAX_THREADS);
-	if (maze_size < 2 || maze_size > MAX_SIZE)
+	if (*num_threads < 1 || *num_threads > MAX_THREADS)
+		fprintf(stderr, "Invalid input for number of threads. Number must be between 1 and %d", MAX_THREADS);
+	if (*maze_size < 2 || *maze_size > MAX_SIZE)
 		fprintf(stderr, "Invalid input for size of maze. Number must be between 2 and %d", MAX_SIZE);
 }
