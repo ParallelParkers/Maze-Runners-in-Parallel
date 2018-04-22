@@ -14,7 +14,7 @@
 void processCommandLineArgs(int argc 	 			/* in */,
 							char* argv[] 			/* in */,
 							long* num_threads 		/* out */,
-							long* maze_size   		/* out */,
+							long* maze_size   		/* out */
 							);
 
 /* main takes the command line arguments and calls upon the functions in maze.c */
@@ -41,11 +41,10 @@ void processCommandLineArgs(int argc, char* argv[], long* num_threads, long* maz
 {
 	/* parse out parameters for maze generation and solving */
 	if (argc != 3)
-		fprintf(stderr, "Incorrect usage of program.  Proper usage is:\n    ./maze <num_threads> <maze_size> <algorithm_choice>\nexiting...\n");
+		fprintf(stderr, "Incorrect usage of program.  Proper usage is:\n    ./maze <num_threads> <maze_size>\nexiting...\n");
 
-	*num_threads      = strtol(argv[1], 10);
-	*maze_size        = strtol(argv[2], 10);
-	*algorithm_choice = strtol(argv[3], 10);
+	*num_threads = strtol(argv[1], 10);
+	*maze_size   = strtol(argv[2], 10);
 
 	if (num_threads < 1 || num_threads > MAX_THREADS)
 		fprint(stderr, "Invalid input for number of threads. Number must be between 1 and %d", MAX_THREADS);

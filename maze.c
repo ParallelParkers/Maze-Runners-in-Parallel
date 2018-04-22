@@ -8,7 +8,7 @@
 /* global variables */
 pthread_t* thread_handles;
 pthread_mutex_t mutex;
-long thread_count, cursor;
+long thread_count;
 MAZE* gen_maze, sol_maze; /* one global variable for initializing the maze, another for solving */
 
 /* adds the given edge to the next slot in the edges
@@ -39,24 +39,26 @@ void rand_edge(int size, int* p1, int* p2)
 	while (counter < 4)
 	{
 		/* checks if p2 is a valid point and has not been visited*/
-		if (num == 0 && row > 0 && !(*gen_maze.vertices[(row-1)*size + col]))
+		if (num == 0 && row > 0)
 		{
 			*p2 = (row-1)*size + col;
-			break;
-		} else if (num == 1 && col < size-1 && !(*gen_maze.vertices[row*size + (col+1)])) {
+			return;
+		} else if (num == 1 && col < size-1) {
 			*p2 = row*size + (col+1);
-			break;
-		} else if (num == 2 && row < size-1 && !(*gen_maze.vertices[(row+1)*size + col])) {
+			return;
+		} else if (num == 2 && row < size-1) {
 			*p2 = (row+1)*size + col;
-			break;
-		} else if (num == 3 && col > 0 && !(*gen_maze.vertices[row*size + (col-1)])) {
+			return;
+		} else if (num == 3 && col > 0) {
 			*p2 = row*size + (col-1);
-			break;
+			return;
 		} else {
 			num = (num+1) % 4;
 			counter++;
 		}
 	}
+	/* could not find random edge... returning null */
+	*p2 = NULL;
 	return;
 }
 
@@ -71,16 +73,16 @@ int visited(int x, int size, int* maze)
 void *threadGenerate(void *my_rank)
 {
 	long rank, n, my_n;
-	int i, a, b, row_comp, col_comp, cursor, *my_maze;
-	PAIR pair;
+	int i, a, b, row_comp, col_comp, comp, cursor, *my_maze;
 	i = 0;
 	cursor = 1;
 	rank = (long) my_rank;
 	n = (long) *gen_maze.side_length;
 	my_n = n/thread_count;
-	row_comp = (int) (n/(thread_count/2))*floor(rank/2);
-	col_comp = (int) (n/2)*(rank % 2);
-	my_maze = &(*gen_maze.vertices[(int) n/thread_count]);
+	comp = (int) my_n*rank;
+	// row_comp = (int) (n/(thread_count/2))*floor(rank/2);
+	// col_comp = (int) (n/2)*(rank % 2);
+	my_maze = &(*gen_maze.vertices[comp]);
 	my_maze[0] = rand() % my_n; /* start off Prim's with a random starting vertex */
 
 	/* generate my portion of maze */
@@ -92,12 +94,12 @@ void *threadGenerate(void *my_rank)
 		rand_edge(my_n, &a, &b);
 
 		/* check if we have an already-visited edge */
-		if (visited(b, cursor, my_maze))
+		if (b == NULL || visited(b, cursor, my_maze))
 			continue;
 
 		/* generate pair with appropriate x and y values for push_back() */
-		pair.x = a + row_comp;
-		pair.y = b + col_comp;
+		pair.x = a + comp;
+		pair.y = b + comp;
 
 		/* add edge to the array of edges and increment if successful */
 		pthread_mutex_lock(&mutex);
@@ -111,7 +113,9 @@ void *threadGenerate(void *my_rank)
 	}
 
     /* using tree-structured reduction */
+    int r;
     int iter = 0;
+    int row_size = (int) my_n/n;
     while (1)
     {
         if ((rank % (int) pow(2,iter+1)) == 0) {
@@ -124,6 +128,19 @@ void *threadGenerate(void *my_rank)
             pthread_join(thread_handles[(int) rank+pow(2,iter)], NULL);
 
             /* resolve appropriate connection between 2 parts of maze */
+            r = rand() % row_size;
+            a = comp + my_n - (row_size-r);
+            b = comp + my_n + r;
+            pair.x = a;
+            pair.y = b;
+			/* add edge to the array of edges */
+			pthread_mutex_lock(&mutex);
+			if (push_back(pair))
+			{
+				fprintf(stderr, "error adding edge in reduction.\nexiting...\n");
+				exit(1);
+			}
+			pthread_mutex_unlock(&mutex);
         } else {
             pthread_exit(0);
         }
@@ -169,7 +186,7 @@ void *threadSolve(void *my_rank)
 void generateMaze(MAZE* m, long size, long num_threads)
 {
 	/* add code to create pthreads */
-    long       thread;
+    long thread;
     long i;
     double start_time, end_time;
     thread_count = num_threads;
