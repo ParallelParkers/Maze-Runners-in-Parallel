@@ -28,12 +28,12 @@ int main(int argc, char* argv[])
 						  );
 
 	/* TODO:  call the appropriate function to generate and return a maze (using pointer reference in argument)
-	i.e.
-	      MAZE maze;
-	      generateMaze(&maze, num_threads, maze_size); */
+	i.e. */
+	MAZE maze;
+	generateMaze(&maze, maze_size, num_threads);
 
 	/* TODO:  call appropriate function to solve maze and generate output .csv file */
-
+	printMaze(&maze);
 	return 0;
 }
 

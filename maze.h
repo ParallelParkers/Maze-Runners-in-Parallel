@@ -17,5 +17,6 @@ typedef struct {
 /* function declarations */
 void generateMaze(MAZE* maze, long size, long num_threads);
 void solveMaze(MAZE* maze);
+void printMaze(MAZE* maze);
 
 #endif
