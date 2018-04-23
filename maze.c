@@ -28,7 +28,7 @@ int push_back(PAIR new_edge)
 }
 
 /* generates a random pair returned through the given pointer, or null if no valid vertex can be found */
-void rand_edge(long size, int* p1, int* p2) 
+void rand_edge(long size, long width, long height, int* p1, int* p2) 
 {
 	if (size <= 1)
 	{
@@ -36,8 +36,8 @@ void rand_edge(long size, int* p1, int* p2)
 		return;
 	}
 	int num, counter, row, col;
-	row = (int) floor(*p1/size);
-	col = *p1 % size;
+	row = (int) floor(*p1/width);
+	col = *p1 % width;
 	num = rand() % 4;
 	counter = 0;
 
@@ -46,16 +46,16 @@ void rand_edge(long size, int* p1, int* p2)
 		/* checks if p2 is a valid point and has not been visited*/
 		if (num == 0 && row > 0)
 		{
-			*p2 = (row-1)*size + col;
+			*p2 = (row-1)*width + col;
 			return;
-		} else if (num == 1 && col < size-1) {
-			*p2 = row*size + (col+1);
+		} else if (num == 1 && col < width-1) {
+			*p2 = row*width + (col+1);
 			return;
-		} else if (num == 2 && row < size-1) {
-			*p2 = (row+1)*size + col;
+		} else if (num == 2 && row < height-1) {
+			*p2 = (row+1)*width + col;
 			return;
 		} else if (num == 3 && col > 0) {
-			*p2 = row*size + (col-1);
+			*p2 = row*width + (col-1);
 			return;
 		} else {
 			num = (num+1) % 4;
@@ -79,20 +79,22 @@ void *threadGenerate(void *my_rank)
 {
 	long rank, n, my_n;
 	PAIR pair;
-	int i, a, b, row_comp, col_comp, comp, cursor, *my_maze;
+	int i, a, b, row_comp, side, col_comp, comp, cursor, *my_maze;
 	i = 0;
+	side = gen_maze->side_length;
 	cursor = 1;
 	rank = (long) my_rank;
-	n = (long) pow(gen_maze->side_length,2);
+	n = (long) pow(side,2);
 	my_n = n/thread_count;
 	comp = (int) my_n*rank;
 	// row_comp = (int) (n/(thread_count/2))*floor(rank/2);
 	// col_comp = (int) (n/2)*(rank % 2);
 	my_maze = &((gen_maze->vertices)[comp]);
 	my_maze[0] = rand() % my_n; /* start off Prim's with a random starting vertex */
+    long row_size = (long) my_n/side;
 	
 	/* generate my portion of maze */
-	while (i < my_n -1 && my_n > 1)
+	while (i < my_n -1)
 	{
 		// /* DEBUGGING: PRINTING OUT VISITED ARRAY */
 		// for (int j=0; j<cursor; j++)
@@ -102,10 +104,10 @@ void *threadGenerate(void *my_rank)
 		/* find that random edge from visited vertices */
 		/* store visited vertices in my_maze and keep track of a cursor */
 		a = my_maze[rand() % cursor];
-		rand_edge(gen_maze->side_length, &a, &b);
+		rand_edge(my_n, (long) side, row_size, &a, &b);
 
 		/* check if we have an already-visited edge */
-		if (b == -1 || visited(b, cursor, my_maze))
+		if (visited(b, cursor, my_maze) || b >= my_n)
 			continue;
 
 		/* generate pair with appropriate x and y values for push_back() */
@@ -128,7 +130,6 @@ void *threadGenerate(void *my_rank)
     /* using tree-structured reduction */
     int r;
     int iter = 0;
-    int row_size = (int) n/my_n;
     while (1)
     {
         if ((rank % (int) pow(2,iter+1)) == 0) {
@@ -141,8 +142,8 @@ void *threadGenerate(void *my_rank)
             pthread_join(thread_handles[(int) (rank+pow(2,iter))], NULL);
 
             /* resolve appropriate connection between 2 parts of maze */
-            r = rand() % row_size;
-            a = comp + my_n - (row_size+r);
+            r = rand() % side;
+            a = comp + my_n - side + r;
             b = comp + my_n + r;
             pair.x = a;
             pair.y = b;
@@ -154,6 +155,7 @@ void *threadGenerate(void *my_rank)
 				exit(1);
 			}
 			pthread_mutex_unlock(&mutex);
+			my_n = 2*my_n; /* adjusting size to accomodate for absorbed vertices */
         } else {
             pthread_exit(0);
         }
@@ -215,7 +217,7 @@ void generateMaze(MAZE* m, long size, long num_threads)
     m->edges = malloc((pow(size,2)-1)*sizeof(PAIR));
     m->vertices = malloc(pow(size,2)*sizeof(int));
 
-    start_time = getProcessTime();
+    start_time = getWorldTime();
     /* Start the threads. */
     for (thread = 0; thread < thread_count; thread++)
         pthread_create(&thread_handles[thread], NULL,
@@ -225,7 +227,7 @@ void generateMaze(MAZE* m, long size, long num_threads)
     *  after all the other threads have completed */
     pthread_join(thread_handles[0], NULL);
 
-    end_time = getProcessTime();
+    end_time = getWorldTime();
 
     printf("Time to generate maze: %f\n", end_time-start_time);
 }
