@@ -94,15 +94,14 @@ void *threadGenerate(void *my_rank)
 	/* generate my portion of maze */
 	while (i < my_n -1 && my_n > 1)
 	{
-		/* DEBUGGING: PRINTING OUT VISITED ARRAY */
-		for (int j=0; j<cursor; j++)
-			fprintf(stderr, "%d ", my_maze[j]);
-		fprintf(stderr, "\n");
+		// /* DEBUGGING: PRINTING OUT VISITED ARRAY */
+		// for (int j=0; j<cursor; j++)
+		// 	fprintf(stderr, "%d ", my_maze[j]);
+		// fprintf(stderr, "\n");
 
 		/* find that random edge from visited vertices */
 		/* store visited vertices in my_maze and keep track of a cursor */
 		a = my_maze[rand() % cursor];
-		fprintf(stderr, "%d\n", a);
 		rand_edge(gen_maze->side_length, &a, &b);
 
 		/* check if we have an already-visited edge */
